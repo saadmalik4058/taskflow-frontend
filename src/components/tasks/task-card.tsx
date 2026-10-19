@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn, formatDate } from "@/lib/utils";
 import { STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS } from "@/lib/api";
-import { MoreHorizontal, Calendar, User } from "lucide-react";
+import { MoreHorizontal, Calendar, User, Loader2 } from "lucide-react";
 import type { Task } from "@/types/api";
+import { tasksApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface TaskCardProps {
   task: Task;
@@ -21,18 +23,30 @@ interface TaskCardProps {
 
 export function TaskCard({ task, isCreator, isAssignee, onEdit, onUpdate }: TaskCardProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const { toast } = useToast();
 
   const canEdit = isCreator || isAssignee;
   const canChangeStatus = isCreator || isAssignee;
   const canChangeOther = isCreator;
 
   const handleStatusChange = async (newStatus: string) => {
+    if (newStatus === task.status) return;
+    
+    setUpdatingStatus(true);
     try {
-      // This would call the API, but for now we'll just refresh
-      // In a real app, you'd call tasksApi.update(task._id, { status: newStatus })
-      // For now, we'll rely on the parent to refresh
-    } catch (error) {
-      console.error("Failed to update status:", error);
+      await tasksApi.update(task._id, { status: newStatus as "pending" | "in-progress" | "completed" });
+      toast({ variant: "success", title: "Status Updated", description: `Task marked as ${STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS] || newStatus}` });
+      onUpdate();
+    } catch (err: unknown) {
+      if (err instanceof Error && "status" in err) {
+        const apiError = err as unknown as { data: { message: string } };
+        toast({ variant: "destructive", title: "Failed to Update", description: apiError.data.message || "Failed to update status" });
+      } else {
+        toast({ variant: "destructive", title: "Error", description: "Failed to update status" });
+      }
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -101,10 +115,11 @@ export function TaskCard({ task, isCreator, isAssignee, onEdit, onUpdate }: Task
               <Select
                 value={task.status}
                 onValueChange={handleStatusChange}
-                disabled={!canChangeStatus}
+                disabled={!canChangeStatus || updatingStatus}
               >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Status" />
+                  {updatingStatus && <Loader2 className="ml-2 h-3 w-3 animate-spin" />}
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pending">Pending</SelectItem>
