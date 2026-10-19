@@ -11,13 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DialogFooter } from "@/components/ui/dialog";
 import { cn, formatDate } from "@/lib/utils";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import type { ListTasksQuery } from "@/types/api";
 
 interface TaskFormProps {
   initialData?: Task | null;
   onSuccess: () => void;
   onClose: () => void;
+}
+
+interface FieldError {
+  field: string;
+  message: string;
 }
 
 export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
@@ -33,8 +38,10 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
   const [assignedTo, setAssignedTo] = useState("");
   const [projects, setProjects] = useState<Array<{ _id: string; name: string }>>([]);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [projectsLoading, setProjectsLoading] = useState(true);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (initialData) {
@@ -60,9 +67,82 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
     }
   };
 
+  const getFieldError = (field: string): string | undefined => {
+    return fieldErrors.find((e) => e.field === field)?.message;
+  };
+
+  const hasFieldError = (field: string): boolean => {
+    return fieldErrors.some((e) => e.field === field);
+  };
+
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const clearFieldError = (field: string) => {
+    setFieldErrors((prev) => prev.filter((e) => e.field !== field));
+  };
+
+  const handleChange = (field: string, value: string) => {
+    switch (field) {
+      case "title":
+        setTitle(value);
+        break;
+      case "description":
+        setDescription(value);
+        break;
+      case "status":
+        setStatus(value as "pending" | "in-progress" | "completed");
+        break;
+      case "priority":
+        setPriority(value as "low" | "medium" | "high");
+        break;
+      case "dueDate":
+        setDueDate(value);
+        break;
+      case "projectId":
+        setProjectId(value);
+        break;
+      case "assignedTo":
+        setAssignedTo(value);
+        break;
+    }
+    // Clear field error on change
+    if (hasFieldError(field)) {
+      clearFieldError(field);
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FieldError[] = [];
+
+    if (!title.trim()) {
+      newErrors.push({ field: "title", message: "Title is required" });
+    } else if (title.length > 200) {
+      newErrors.push({ field: "title", message: "Title must be at most 200 characters" });
+    }
+
+    if (!projectId) {
+      newErrors.push({ field: "project", message: "Project is required" });
+    }
+
+    if (description.length > 2000) {
+      newErrors.push({ field: "description", message: "Description must be at most 2000 characters" });
+    }
+
+    setFieldErrors(newErrors);
+    return newErrors.length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setFieldErrors([]);
+
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -86,6 +166,7 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
       if (err instanceof Error && "status" in err) {
         const apiError = err as unknown as { status: number; data: { message: string; errors?: Array<{ field: string; message: string }> } };
         if (apiError.status === 400 && apiError.data.errors) {
+          setFieldErrors(apiError.data.errors);
           setError(apiError.data.errors.map((e) => `${e.field}: ${e.message}`).join(", "));
         } else {
           setError(apiError.data.message || "Failed to save task");
@@ -98,12 +179,16 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
     }
   };
 
+  const handleBlurWrapper = (field: string) => (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    handleBlur(field);
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4">
-      {error && (
-        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-md">
-          <AlertCircle className="h-4 w-4" />
-          <span>{error}</span>
+    <form onSubmit={handleSubmit} className="space-y-4 p-4" noValidate>
+      {(error || fieldErrors.length > 0) && (
+        <div className="flex items-center gap-2 text-sm text-[hsl(var(--color-destructive))] bg-[hsl(var(--color-destructive)/0.1)] p-3 rounded-lg border border-[hsl(var(--color-destructive)/0.2)] animate-in slide-down">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span>{error || fieldErrors.map((e) => e.message).join(", ")}</span>
         </div>
       )}
 
@@ -112,11 +197,25 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
         <Input
           id="title"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => handleChange("title", e.target.value)}
+          onBlur={handleBlurWrapper("title")}
           placeholder="Task title"
           required
           disabled={isLoading}
+          aria-invalid={hasFieldError("title")}
+          aria-describedby={hasFieldError("title") ? "title-error" : undefined}
         />
+        {touched.title && hasFieldError("title") && (
+          <p id="title-error" className="text-xs text-[hsl(var(--color-destructive))]" role="alert">
+            {getFieldError("title")}
+          </p>
+        )}
+        {touched.title && !hasFieldError("title") && title.trim() && (
+          <p className="text-xs text-[hsl(var(--color-success))] flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3" />
+            Title looks good
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -124,11 +223,24 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
         <Textarea
           id="description"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => handleChange("description", e.target.value)}
+          onBlur={handleBlurWrapper("description")}
           placeholder="Task description"
           rows={3}
           disabled={isLoading}
+          aria-invalid={hasFieldError("description")}
+          aria-describedby={hasFieldError("description") ? "description-error" : undefined}
         />
+        {touched.description && hasFieldError("description") && (
+          <p id="description-error" className="text-xs text-[hsl(var(--color-destructive))]" role="alert">
+            {getFieldError("description")}
+          </p>
+        )}
+        {touched.description && !hasFieldError("description") && description.length > 0 && (
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            {description.length}/2000 characters
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -167,7 +279,8 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
           id="dueDate"
           type="date"
           value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
+          onChange={(e) => handleChange("dueDate", e.target.value)}
+          onBlur={handleBlurWrapper("dueDate")}
           disabled={isLoading}
         />
       </div>
@@ -177,7 +290,7 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
         {projectsLoading ? (
           <Input placeholder="Loading projects..." disabled />
         ) : (
-          <Select value={projectId} onValueChange={setProjectId} disabled={isLoading || projectsLoading}>
+          <Select value={projectId} onValueChange={(v) => handleChange("projectId", v)} disabled={isLoading || projectsLoading}>
             <SelectTrigger>
               <SelectValue placeholder="Select project" />
             </SelectTrigger>
@@ -190,11 +303,16 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
             </SelectContent>
           </Select>
         )}
+        {touched.projectId && hasFieldError("project") && (
+          <p id="project-error" className="text-xs text-[hsl(var(--color-destructive))]" role="alert">
+            {getFieldError("project")}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="assignedTo">Assigned To</Label>
-        <Select value={assignedTo} onValueChange={setAssignedTo} disabled={isLoading}>
+        <Select value={assignedTo} onValueChange={(v) => handleChange("assignedTo", v)} disabled={isLoading}>
           <SelectTrigger>
             <SelectValue placeholder="Select assignee (optional)" />
           </SelectTrigger>
@@ -209,19 +327,17 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
         </Select>
       </div>
 
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+      <DialogFooter className="pt-4 border-t border-[hsl(var(--border))]">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={isLoading}
+        >
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading || projectsLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            isEditing ? "Update Task" : "Create Task"
-          )}
+        <Button type="submit" disabled={isLoading || projectsLoading} loading={isLoading}>
+          {isLoading ? "Saving..." : isEditing ? "Update Task" : "Create Task"}
         </Button>
       </DialogFooter>
     </form>

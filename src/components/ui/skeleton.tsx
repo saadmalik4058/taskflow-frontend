@@ -12,6 +12,7 @@ export function Skeleton({
   variant = "text",
   width,
   height,
+  style,
   ...props
 }: SkeletonProps) {
   return (
@@ -25,7 +26,7 @@ export function Skeleton({
         },
         className
       )}
-      style={{ width, height, ...(props as React.CSSProperties).style }}
+      style={{ width, height, ...style }}
       {...props}
     />
   );
