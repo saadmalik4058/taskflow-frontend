@@ -1,4 +1,6 @@
 // components/ui/card.tsx
+"use client";
+
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -7,7 +9,11 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     <div
       ref={ref}
       className={cn(
-        "rounded-lg border bg-white text-gray-950 shadow-sm",
+        "rounded-xl border bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))]",
+        "border-[hsl(var(--card-border))]",
+        "shadow-[var(--shadow-sm)]",
+        "transition-shadow duration-200",
+        "hover:shadow-[var(--shadow-md)]",
         className
       )}
       {...props}
@@ -31,7 +37,11 @@ const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HT
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn("text-2xl font-semibold leading-none tracking-tight", className)}
+      className={cn(
+        "text-xl font-semibold leading-tight tracking-tight",
+        "text-[hsl(var(--foreground))]",
+        className
+      )}
       {...props}
     />
   )
@@ -44,7 +54,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-sm text-[hsl(var(--muted-foreground))]", className)}
     {...props}
   />
 ));
@@ -61,7 +71,7 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("flex items-center p-6 pt-0", className)}
+      className={cn("flex items-center p-6 pt-0 border-t border-[hsl(var(--border))]", className)}
       {...props}
     />
   )
