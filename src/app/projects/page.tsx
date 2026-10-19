@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Plus, Loader2, Trash2, Edit } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 export default function ProjectsPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();

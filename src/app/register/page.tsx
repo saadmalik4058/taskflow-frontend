@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();

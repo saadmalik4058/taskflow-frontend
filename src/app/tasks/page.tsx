@@ -18,6 +18,8 @@ import { Pagination } from "@/components/ui/pagination";
 import { cn, formatDate } from "@/lib/utils";
 import { Plus, Search, Filter, Loader2, AlertCircle } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default function TasksPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
