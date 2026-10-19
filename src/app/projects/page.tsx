@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Loader2, Trash2, Edit, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, Trash2, Edit, AlertCircle, CheckCircle2, LayoutGrid, List } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { ProjectListSkeleton } from "@/components/ui/skeleton";
 
@@ -37,6 +37,7 @@ export default function ProjectsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -208,10 +209,30 @@ export default function ProjectsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
           <p className="text-[hsl(var(--muted-foreground))]">Your projects and their tasks</p>
         </div>
-        <Button onClick={() => { closeDialog(); setShowCreateDialog(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Project
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            size="icon"
+            onClick={() => setViewMode("grid")}
+            aria-label="Grid view"
+            title="Grid view"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="icon"
+            onClick={() => setViewMode("list")}
+            aria-label="List view"
+            title="List view"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          <Button onClick={() => { closeDialog(); setShowCreateDialog(true); }}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Project
+          </Button>
+        </div>
       </div>
 
       {(error || fieldErrors.length > 0) && (
@@ -238,44 +259,87 @@ export default function ProjectsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => (
-            <Card key={project._id}>
-              <CardHeader>
-                <CardTitle className="truncate">{project.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {project.description && (
-                  <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4 line-clamp-2">
-                    {project.description}
-                  </p>
-                )}
-                <div className="flex items-center justify-between text-sm text-[hsl(var(--muted-foreground))]">
-                  <span>Created: {formatDate(project.createdAt)}</span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditDialog(project)}
-                      aria-label="Edit project"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => setDeletingProject(project)}
-                      disabled={deleteLoading}
-                      aria-label="Delete project"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+        viewMode === "grid" ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project) => (
+              <Card key={project._id}>
+                <CardHeader>
+                  <CardTitle className="truncate">{project.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {project.description && (
+                    <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4 line-clamp-2">
+                      {project.description}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between text-sm text-[hsl(var(--muted-foreground))]">
+                    <span>Created: {formatDate(project.createdAt)}</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(project)}
+                        aria-label="Edit project"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => setDeletingProject(project)}
+                        disabled={deleteLoading}
+                        aria-label="Delete project"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {projects.map((project) => (
+              <Card key={project._id} className="hover:shadow-md transition-shadow">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold truncate">{project.name}</h3>
+                      {project.description && (
+                        <p className="text-sm text-[hsl(var(--muted-foreground))] truncate mt-1">
+                          {project.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-[hsl(var(--muted-foreground))] flex-shrink-0">
+                      <span>Created: {formatDate(project.createdAt)}</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(project)}
+                          aria-label="Edit project"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => setDeletingProject(project)}
+                          disabled={deleteLoading}
+                          aria-label="Delete project"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )
       )}
 
       {/* Create/Edit Dialog */}
