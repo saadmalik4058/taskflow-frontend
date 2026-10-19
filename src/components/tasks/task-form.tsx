@@ -11,8 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DialogFooter } from "@/components/ui/dialog";
 import { cn, formatDate } from "@/lib/utils";
-import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import type { ListTasksQuery } from "@/types/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface TaskFormProps {
   initialData?: Task | null;
@@ -27,6 +28,7 @@ interface FieldError {
 
 export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const isEditing = !!initialData;
 
   const [title, setTitle] = useState("");
@@ -37,7 +39,6 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
   const [projectId, setProjectId] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
   const [projects, setProjects] = useState<Array<{ _id: string; name: string }>>([]);
-  const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [projectsLoading, setProjectsLoading] = useState(true);
@@ -136,10 +137,14 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setFieldErrors([]);
 
     if (!validateForm()) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please fix the errors below",
+      });
       return;
     }
 
@@ -158,8 +163,10 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
 
       if (isEditing) {
         await tasksApi.update(initialData!._id, payload);
+        toast({ variant: "success", title: "Task Updated", description: "Your changes have been saved" });
       } else {
         await tasksApi.create(payload);
+        toast({ variant: "success", title: "Task Created", description: "Your new task has been created" });
       }
       onSuccess();
     } catch (err: unknown) {
@@ -167,12 +174,12 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
         const apiError = err as unknown as { status: number; data: { message: string; errors?: Array<{ field: string; message: string }> } };
         if (apiError.status === 400 && apiError.data.errors) {
           setFieldErrors(apiError.data.errors);
-          setError(apiError.data.errors.map((e) => `${e.field}: ${e.message}`).join(", "));
+          toast({ variant: "destructive", title: "Validation Error", description: apiError.data.errors.map((e) => `${e.field}: ${e.message}`).join(", ") });
         } else {
-          setError(apiError.data.message || "Failed to save task");
+          toast({ variant: "destructive", title: "Error", description: apiError.data.message || "Failed to save task" });
         }
       } else {
-        setError("An unexpected error occurred");
+        toast({ variant: "destructive", title: "Error", description: "An unexpected error occurred" });
       }
     } finally {
       setIsLoading(false);
@@ -185,13 +192,6 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4" noValidate>
-      {(error || fieldErrors.length > 0) && (
-        <div className="flex items-center gap-2 text-sm text-[hsl(var(--color-destructive))] bg-[hsl(var(--color-destructive)/0.1)] p-3 rounded-lg border border-[hsl(var(--color-destructive)/0.2)] animate-in slide-down">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          <span>{error || fieldErrors.map((e) => e.message).join(", ")}</span>
-        </div>
-      )}
-
       <div className="space-y-2">
         <Label htmlFor="title">Title *</Label>
         <Input

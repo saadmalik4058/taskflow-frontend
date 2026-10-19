@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { Header } from "@/components/layout/header";
+import { ToastProvider, ToastViewport } from "@/components/ui/toast";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -20,12 +21,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className={`${inter.className} antialiased`}>
-        <AuthProvider>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1 container mx-auto px-4 py-6">{children}</main>
-          </div>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1 container mx-auto px-4 py-6">{children}</main>
+            </div>
+          </AuthProvider>
+          <ToastViewport />
+        </ToastProvider>
       </body>
     </html>
   );
