@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Loader2, Trash2, Edit } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
+import { ProjectListSkeleton } from "@/components/ui/skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -153,16 +154,7 @@ export default function ProjectsPage() {
       )}
 
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="pt-6">
-                <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
-                <div className="h-4 bg-gray-200 rounded w-1/2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <ProjectListSkeleton count={3} />
       ) : projects.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">

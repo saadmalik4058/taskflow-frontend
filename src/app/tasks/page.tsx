@@ -17,6 +17,7 @@ import { TaskForm } from "@/components/tasks/task-form";
 import { Pagination } from "@/components/ui/pagination";
 import { cn, formatDate } from "@/lib/utils";
 import { Plus, Search, Filter, Loader2, AlertCircle } from "lucide-react";
+import { TaskListSkeleton } from "@/components/ui/skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -210,16 +211,7 @@ export default function TasksPage() {
 
       {/* Tasks list */}
       {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="pt-6">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <TaskListSkeleton count={3} />
       ) : tasksData?.tasks.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
