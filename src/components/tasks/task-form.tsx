@@ -14,6 +14,7 @@ import { cn, formatDate } from "@/lib/utils";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import type { ListTasksQuery } from "@/types/api";
 import { useToast } from "@/hooks/use-toast";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface TaskFormProps {
   initialData?: Task | null;
@@ -275,14 +276,20 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
 
       <div className="space-y-2">
         <Label htmlFor="dueDate">Due Date</Label>
-        <Input
+        <DatePicker
           id="dueDate"
-          type="date"
           value={dueDate}
-          onChange={(e) => handleChange("dueDate", e.target.value)}
+          onChange={(val) => handleChange("dueDate", val || "")}
           onBlur={handleBlurWrapper("dueDate")}
           disabled={isLoading}
+          error={getFieldError("dueDate")}
+          placeholder="Select due date"
         />
+        {touched.dueDate && hasFieldError("dueDate") && (
+          <p id="dueDate-error" className="text-xs text-[hsl(var(--color-destructive))]" role="alert">
+            {getFieldError("dueDate")}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
