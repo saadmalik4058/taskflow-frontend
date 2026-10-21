@@ -69,67 +69,74 @@ export function TaskCard({ task, isCreator, isAssignee, onEdit, onUpdate }: Task
   };
 
   return (
-    <Card className={cn("transition-shadow hover:shadow-md", !canEdit && "opacity-75")}>
+    <Card className={cn("group transition-all duration-200 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 border-[hsl(var(--card-border))]", !canEdit && "opacity-75")}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">{task.title}</CardTitle>
+            <CardTitle className="text-lg truncate group-hover:text-[hsl(var(--color-primary))] transition-colors">{task.title}</CardTitle>
             {task.description && (
-              <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+              <p className="mt-2 text-sm text-[hsl(var(--muted-foreground))] line-clamp-2 leading-relaxed">
                 {task.description}
               </p>
             )}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Badge variant={priorityVariant(task.priority)}>
+            <Badge variant={priorityVariant(task.priority)} className="font-medium">
               {PRIORITY_LABELS[task.priority] || task.priority}
             </Badge>
-            <Badge variant={statusVariant(task.status)}>
+            <Badge variant={statusVariant(task.status)} className="font-medium">
               {STATUS_LABELS[task.status] || task.status}
             </Badge>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-4 text-xs text-[hsl(var(--muted-foreground))]">
           {task.dueDate && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[hsl(var(--muted))]/50">
               <Calendar className="h-3.5 w-3.5" />
               Due: {formatDate(task.dueDate)}
             </span>
           )}
           {task.assignedTo && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[hsl(var(--muted))]/50">
               <User className="h-3.5 w-3.5" />
               Assigned
             </span>
           )}
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[hsl(var(--muted))]/50">
             Created: {formatDate(task.createdAt)}
           </span>
         </div>
 
         {canEdit && (
-          <div className="mt-4 flex items-center justify-end gap-2">
-            {canChangeStatus && (
-              <Select
-                value={task.status}
-                onValueChange={handleStatusChange}
-                disabled={!canChangeStatus || updatingStatus}
-              >
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Status" />
-                  {updatingStatus && <Loader2 className="ml-2 h-3 w-3 animate-spin" />}
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
+          <div className="mt-4 flex items-center justify-between gap-2 pt-3 border-t border-[hsl(var(--border))]">
+            <div className="flex items-center gap-2">
+              {canChangeStatus && (
+                <Select
+                  value={task.status}
+                  onValueChange={handleStatusChange}
+                  disabled={!canChangeStatus || updatingStatus}
+                >
+                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                    <SelectValue placeholder="Status" />
+                    {updatingStatus && <Loader2 className="ml-2 h-3 w-3 animate-spin" />}
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="in-progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
             {canChangeOther && (
-              <Button variant="outline" size="sm" onClick={() => onEdit(task)}>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => onEdit(task)}
+                className="h-8 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+              >
                 Edit
               </Button>
             )}

@@ -9,8 +9,8 @@ import { ToastProvider, ToastViewport } from "@/components/ui/toast";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Taskflow",
-  description: "Task management for teams",
+  title: "Taskflow - Modern Task Management",
+  description: "Streamline your team's workflow with Taskflow. Manage tasks, projects, and collaboration effortlessly.",
 };
 
 export default function RootLayout({
@@ -20,12 +20,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased bg-[hsl(var(--background))]`}>
         <ToastProvider>
           <AuthProvider>
             <div className="flex min-h-screen flex-col">
               <Header />
-              <main className="flex-1 container mx-auto px-4 py-6">{children}</main>
+              <main className="flex-1 container mx-auto px-4 py-8">{children}</main>
             </div>
           </AuthProvider>
           <ToastViewport />
