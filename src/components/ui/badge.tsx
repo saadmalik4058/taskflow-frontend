@@ -11,7 +11,7 @@ interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 function Badge({ className, variant = "default", ...props }: BadgeProps) {
-  const base = "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2";
+  const base = "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))] focus:ring-offset-2 hover:scale-105";
 
   const variants = {
     default: "bg-[hsl(var(--color-primary))] text-[hsl(var(--color-primary-foreground))]",

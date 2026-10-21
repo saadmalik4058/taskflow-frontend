@@ -18,7 +18,7 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "animate-pulse rounded bg-muted",
+        "animate-pulse rounded bg-[hsl(var(--muted))]",
         {
           "h-4 w-full": variant === "text",
           "rounded-full": variant === "circular",
