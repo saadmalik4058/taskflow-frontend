@@ -192,9 +192,9 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       <div className="space-y-2">
-        <Label htmlFor="title">Title *</Label>
+        <Label htmlFor="title" className="text-sm font-medium">Title *</Label>
         <Input
           id="title"
           value={title}
@@ -220,7 +220,7 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description" className="text-sm font-medium">Description</Label>
         <Textarea
           id="description"
           value={description}
@@ -246,7 +246,7 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status" className="text-sm font-medium">Status</Label>
           <Select value={status} onValueChange={(v) => setStatus(v as "pending" | "in-progress" | "completed")} disabled={isLoading}>
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
@@ -260,7 +260,7 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="priority">Priority</Label>
+          <Label htmlFor="priority" className="text-sm font-medium">Priority</Label>
           <Select value={priority} onValueChange={(v) => setPriority(v as "low" | "medium" | "high")} disabled={isLoading}>
             <SelectTrigger>
               <SelectValue placeholder="Select priority" />
@@ -275,7 +275,7 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="dueDate">Due Date</Label>
+        <Label htmlFor="dueDate" className="text-sm font-medium">Due Date</Label>
         <DatePicker
           id="dueDate"
           value={dueDate}
@@ -293,7 +293,7 @@ export function TaskForm({ initialData, onSuccess, onClose }: TaskFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="project">Project *</Label>
+        <Label htmlFor="project" className="text-sm font-medium">Project *</Label>
         {projectsLoading ? (
           <Input placeholder="Loading projects..." disabled />
         ) : (
