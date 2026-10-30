@@ -1,39 +1,23 @@
-// lib/auth.tsx — Auth context, provider, and hooks
+// lib/auth.tsx — Auth context backed by the same-origin BFF
 "use client";
 
 import React, {
   createContext,
+  useCallback,
   useContext,
-  useState,
   useEffect,
-  ReactNode,
+  useRef,
+  useState,
+  type ReactNode,
 } from "react";
 import { authApi } from "@/lib/api";
 import type { UserProfile } from "@/types/api";
 
-// Decode JWT token (without verification - we trust our own token)
-function decodeToken(token: string): UserProfile | null {
-  try {
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-    return JSON.parse(jsonPayload);
-  } catch {
-    return null;
-  }
-}
-
 interface AuthContextType {
   user: UserProfile | null;
-  token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -41,51 +25,67 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const sessionVersion = useRef(0);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    let cancelled = false;
+    const requestVersion = sessionVersion.current;
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
+    authApi
+      .me()
+      .then(({ user: currentUser }) => {
+        if (!cancelled && sessionVersion.current === requestVersion) {
+          setUser(currentUser);
+        }
+      })
+      .catch(() => {
+        if (!cancelled && sessionVersion.current === requestVersion) {
+          setUser(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled && sessionVersion.current === requestVersion) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { user: currentUser } = await authApi.login({ email, password });
+    sessionVersion.current += 1;
+    setUser(currentUser);
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const { token: newToken } = await authApi.login({ email, password });
-    const userData = decodeToken(newToken);
-    if (!userData) throw new Error("Failed to decode token");
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(userData));
-    setToken(newToken);
-    setUser(userData);
-  };
+  const register = useCallback(
+    async (username: string, email: string, password: string) => {
+      await authApi.register({ username, email, password });
+      const { user: currentUser } = await authApi.login({ email, password });
+      sessionVersion.current += 1;
+      setUser(currentUser);
+      setIsLoading(false);
+    },
+    []
+  );
 
-  const register = async (username: string, email: string, password: string) => {
-    const { user: userData } = await authApi.register({ username, email, password });
-    // After registration, log in to get the token
-    const { token: newToken } = await authApi.login({ email, password });
-    const userDataFromToken = decodeToken(newToken);
-    if (!userDataFromToken) throw new Error("Failed to decode token");
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(userDataFromToken));
-    setToken(newToken);
-    setUser(userDataFromToken);
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setToken(null);
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Clear the client state even if the network request fails.
+    }
+    sessionVersion.current += 1;
     setUser(null);
-  };
+    setIsLoading(false);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

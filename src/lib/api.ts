@@ -2,15 +2,12 @@
 // All functions return typed data on success, throw typed errors on failure.
 
 import {
-  API_BASE_URL,
-  type ApiErrorResponse,
-  type ValidationErrorResponse,
-  type SimpleErrorResponse,
   type RegisterRequest,
   type RegisterResponse,
   type LoginRequest,
-  type LoginResponse,
-  type ProfileResponse,
+  type BffLoginResponse,
+  type SessionResponse,
+  type LogoutResponse,
   type UsersResponse,
   type Project,
   type ProjectResponse,
@@ -25,6 +22,13 @@ import {
   type ListTasksQuery,
   type TaskScope,
 } from "@/types/api";
+import { ApiError, parseApiError } from "@/lib/api/errors";
+
+export { ApiError } from "@/lib/api/errors";
+export type {
+  ApiFieldError,
+  NormalizedApiErrorData,
+} from "@/lib/api/errors";
 
 // Re-export types for convenience
 export type {
@@ -42,6 +46,9 @@ export type {
   UpdateTaskRequest,
   RegisterResponse,
   LoginResponse,
+  BffLoginResponse,
+  SessionResponse,
+  LogoutResponse,
   ProjectResponse,
   ProjectsResponse,
   TaskResponse,
@@ -54,76 +61,82 @@ export type {
   PaginatedTasks,
 } from "@/types/api";
 
-export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly data: ApiErrorResponse,
-    message: string
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-
-  static async fromResponse(res: Response): Promise<ApiError> {
-    let data: ApiErrorResponse;
-    try {
-      data = await res.json();
-    } catch {
-      data = { message: res.statusText || "Unknown error" };
-    }
-    const message = "errors" in data
-      ? data.errors.map((e) => `${e.field}: ${e.message}`).join(", ")
-      : data.message;
-    return new ApiError(res.status, data, message);
-  }
-
-  isValidationError(): this is ApiError & { data: ValidationErrorResponse } {
-    return (
-      typeof this.data === "object" &&
-      this.data !== null &&
-      "success" in this.data &&
-      this.data.success === false &&
-      "errors" in this.data
-    );
-  }
-
-  getValidationErrors(): Array<{ field: string; message: string }> | null {
-    if (this.isValidationError()) {
-      return this.data.errors;
-    }
-    return null;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Core fetch helper
 // ---------------------------------------------------------------------------
-async function fetchApi<T>(
-  path: string,
-  options: RequestInit = {}
+async function fetchJson<T>(
+  url: string,
+  options: RequestInit = {},
+  redirectOn401 = true
 ): Promise<T> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const headers = new Headers(options.headers);
 
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
-  };
-
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers,
-  });
-
-  if (!res.ok) {
-    throw await ApiError.fromResponse(res);
+  if (options.body !== undefined && !headers.has("content-type")) {
+    headers.set("content-type", "application/json");
   }
 
-  if (res.status === 204) {
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+  } catch (error) {
+    throw new ApiError(0, {
+      message:
+        error instanceof Error
+          ? error.message
+          : "Network request failed. Please try again.",
+    });
+  }
+
+  if (!response.ok) {
+    const error = await parseApiError(response);
+
+    if (error.status === 401 && redirectOn401 && typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const alreadyOnExpiredLogin =
+        window.location.pathname === "/login" &&
+        params.get("reason") === "session-expired";
+
+      if (!alreadyOnExpiredLogin) {
+        const loginUrl = new URL("/login", window.location.origin);
+        loginUrl.searchParams.set("reason", "session-expired");
+
+        if (window.location.pathname !== "/login") {
+          loginUrl.searchParams.set(
+            "next",
+            `${window.location.pathname}${window.location.search}`
+          );
+        }
+
+        window.location.replace(loginUrl.toString());
+      }
+    }
+
+    throw error;
+  }
+
+  if (response.status === 204) {
     return undefined as T;
   }
 
-  return res.json();
+  const text = await response.text();
+  return text ? (JSON.parse(text) as T) : (undefined as T);
+}
+
+function fetchApi<T>(path: string, options: RequestInit = {}): Promise<T> {
+  return fetchJson<T>(`/api/proxy${path}`, options);
+}
+
+function authFetch<T>(
+  path: string,
+  options: RequestInit = {},
+  redirectOn401 = false
+): Promise<T> {
+  return fetchJson<T>(path, options, redirectOn401);
 }
 
 // ---------------------------------------------------------------------------
@@ -131,18 +144,23 @@ async function fetchApi<T>(
 // ---------------------------------------------------------------------------
 export const authApi = {
   register: (data: RegisterRequest) =>
-    fetchApi<RegisterResponse>("/register", {
+    authFetch<RegisterResponse>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
   login: (data: LoginRequest) =>
-    fetchApi<LoginResponse>("/login", {
+    authFetch<BffLoginResponse>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify(data),
     }),
 
-  getProfile: () => fetchApi<ProfileResponse>("/profile"),
+  me: () => authFetch<SessionResponse>("/api/auth/me", {}, true),
+
+  logout: () =>
+    authFetch<LogoutResponse>("/api/auth/logout", {
+      method: "POST",
+    }),
 
   getUsers: () => fetchApi<UsersResponse>("/users"),
 };

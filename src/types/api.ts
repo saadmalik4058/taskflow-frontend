@@ -85,12 +85,12 @@ export interface LoginRequest {
 
 export interface CreateProjectRequest {
   name: string;                // required, trimmed, min 1
-  description?: string;        // optional, trimmed, max 2000
+  description?: string;        // optional, trimmed, max 500
 }
 
 export interface UpdateProjectRequest {
   name?: string;
-  description?: string;
+  description?: string;        // optional, trimmed, max 500
 }
 
 export interface CreateTaskRequest {
@@ -145,6 +145,19 @@ export interface LoginResponse {
 export interface ProfileResponse {
   message: string;
   user: UserProfile;
+}
+
+// BFF responses (the browser never receives the raw JWT)
+export interface BffLoginResponse {
+  user: UserProfile;
+}
+
+export interface SessionResponse {
+  user: UserProfile | null;
+}
+
+export interface LogoutResponse {
+  message: string;
 }
 
 export interface UsersResponse {
@@ -214,8 +227,3 @@ export function isValidationError(err: unknown): err is ValidationErrorResponse 
 // Scope enum for the UI tabs
 // ---------------------------------------------------------------------------
 export type TaskScope = "created" | "assigned";
-
-// ---------------------------------------------------------------------------
-// API base URL
-// ---------------------------------------------------------------------------
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";

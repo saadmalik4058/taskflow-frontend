@@ -8,6 +8,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        /* Concept C semantic aliases */
+        canvas: "var(--tf-canvas)",
+        surface: "var(--tf-surface)",
+        line: "var(--tf-line)",
+        ink: {
+          DEFAULT: "var(--tf-ink)",
+          muted: "var(--tf-ink-muted)",
+        },
+        brand: {
+          DEFAULT: "var(--tf-primary)",
+          strong: "var(--tf-primary-strong)",
+          soft: "var(--tf-primary-soft)",
+          foreground: "var(--tf-primary-foreground)",
+        },
+
+        /* Legacy aliases used by existing UI components */
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -46,9 +62,10 @@ module.exports = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        pill: "var(--radius-full)",
       },
       fontFamily: {
-        sans: ["var(--font-inter)"],
+        sans: ["var(--font-plus-jakarta)", "system-ui", "sans-serif"],
       },
     },
   },

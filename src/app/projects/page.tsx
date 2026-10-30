@@ -1,16 +1,18 @@
 // app/projects/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { projectsApi, type Project, type CreateProjectRequest, type UpdateProjectRequest } from "@/lib/api";
+import { notifyProjectsChanged } from "@/lib/project-events";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/layout/page-header";
 import { Plus, Loader2, Trash2, Edit, AlertCircle, CheckCircle2, LayoutGrid, List } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import { ProjectListSkeleton } from "@/components/ui/skeleton";
@@ -45,11 +47,7 @@ export default function ProjectsPage() {
     }
   }, [user, authLoading, router]);
 
-  useEffect(() => {
-    fetchProjects();
-  }, [user]);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
     setError("");
@@ -66,7 +64,11 @@ export default function ProjectsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const getFieldError = (field: string): string | undefined => {
     return fieldErrors.find((e) => e.field === field)?.message;
@@ -107,8 +109,8 @@ export default function ProjectsPage() {
       newErrors.push({ field: "name", message: "Name must be at most 100 characters" });
     }
 
-    if (description.length > 2000) {
-      newErrors.push({ field: "description", message: "Description must be at most 2000 characters" });
+    if (description.length > 500) {
+      newErrors.push({ field: "description", message: "Description must be at most 500 characters" });
     }
 
     setFieldErrors(newErrors);
@@ -142,6 +144,7 @@ export default function ProjectsPage() {
         await projectsApi.create(payload as CreateProjectRequest);
       }
       fetchProjects();
+      notifyProjectsChanged();
       closeDialog();
     } catch (err: unknown) {
       if (err instanceof Error && "data" in err) {
@@ -166,6 +169,7 @@ export default function ProjectsPage() {
     try {
       await projectsApi.delete(project._id);
       fetchProjects();
+      notifyProjectsChanged();
     } catch (err: unknown) {
       if (err instanceof Error && "data" in err) {
         const apiError = err as { data: { message: string } };
@@ -204,36 +208,44 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-[hsl(var(--muted-foreground))]">Your projects and their tasks</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={viewMode === "grid" ? "default" : "outline"}
-            size="icon"
-            onClick={() => setViewMode("grid")}
-            aria-label="Grid view"
-            title="Grid view"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "outline"}
-            size="icon"
-            onClick={() => setViewMode("list")}
-            aria-label="List view"
-            title="List view"
-          >
-            <List className="h-4 w-4" />
-          </Button>
-          <Button onClick={() => { closeDialog(); setShowCreateDialog(true); }}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Project
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Projects"
+        description="Your projects and their tasks"
+        actions={
+          <>
+            <Button
+              variant={viewMode === "grid" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("grid")}
+              aria-label="Grid view"
+              title="Grid view"
+              className="h-11 w-11"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("list")}
+              aria-label="List view"
+              title="List view"
+              className="h-11 w-11"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => {
+                closeDialog();
+                setShowCreateDialog(true);
+              }}
+              className="h-11"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New project
+            </Button>
+          </>
+        }
+      />
 
       {(error || fieldErrors.length > 0) && (
         <div className="flex items-center gap-2 text-sm text-[hsl(var(--color-destructive))] bg-[hsl(var(--color-destructive)/0.1)] p-3 rounded-lg border border-[hsl(var(--color-destructive)/0.2)] animate-in slide-down">
@@ -391,6 +403,7 @@ export default function ProjectsPage() {
                 onBlur={handleBlurWrapper("description")}
                 placeholder="Project description"
                 rows={3}
+                maxLength={500}
                 disabled={isLoading}
                 aria-invalid={hasFieldError("description")}
                 aria-describedby={hasFieldError("description") ? "description-error" : undefined}
@@ -402,7 +415,7 @@ export default function ProjectsPage() {
               )}
               {touched.description && !hasFieldError("description") && description.length > 0 && (
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  {description.length}/2000 characters
+                  {description.length}/500 characters
                 </p>
               )}
             </div>

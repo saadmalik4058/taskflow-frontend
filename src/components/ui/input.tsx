@@ -12,16 +12,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          "flex h-10 w-full rounded-lg",
-          "border border-[hsl(var(--input-border))]",
-          "bg-[hsl(var(--background))] text-[hsl(var(--foreground))]",
+          "flex h-11 w-full rounded-lg",
+          "border border-line bg-surface text-ink",
           "px-3 py-2 text-sm",
-          "placeholder:text-[hsl(var(--muted-foreground))]",
-          "transition-all duration-200",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--background))]",
-          "focus-visible:border-[hsl(var(--input-border-focus))]",
-          "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[hsl(var(--muted))]",
-          "hover:border-[hsl(var(--input-border-focus))]/70",
+          "placeholder:text-ink-muted",
+          "transition-colors duration-200",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+          "focus-visible:border-brand",
+          "disabled:cursor-not-allowed disabled:bg-canvas disabled:opacity-50",
+          "hover:border-brand",
+          "aria-[invalid=true]:border-[hsl(var(--color-destructive))]",
+          "aria-[invalid=true]:focus-visible:ring-[hsl(var(--color-destructive))]",
           "file:border-0 file:bg-transparent file:text-sm file:font-medium",
           className
         )}

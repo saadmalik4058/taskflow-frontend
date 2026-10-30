@@ -1,7 +1,7 @@
 // app/tasks/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { tasksApi, type ListTasksQuery, type TaskScope } from "@/lib/api";
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { TaskCard } from "@/components/tasks/task-card";
 import { TaskForm } from "@/components/tasks/task-form";
+import { PageHeader } from "@/components/layout/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { cn, formatDate } from "@/lib/utils";
 import { Plus, Search, Filter, Loader2, AlertCircle } from "lucide-react";
@@ -38,7 +39,7 @@ export default function TasksPage() {
     }
   }, [user, authLoading, router]);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
     setError("");
@@ -55,11 +56,11 @@ export default function TasksPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [query, scope, user]);
 
   useEffect(() => {
     fetchTasks();
-  }, [query, scope, user]);
+  }, [fetchTasks]);
 
   const handlePageChange = (page: number) => {
     setQuery((prev) => ({ ...prev, page }));
@@ -96,25 +97,23 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header with create button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-[hsl(var(--foreground))] to-[hsl(var(--muted-foreground))] bg-clip-text text-transparent">
-            Tasks
-          </h1>
-          <p className="text-[hsl(var(--muted-foreground))] mt-1">
-            {scope === "created" ? "Manage tasks you created" : "Tasks assigned to you"}
-          </p>
-        </div>
-        <Button 
-          onClick={() => { setEditingTask(null); setShowCreateDialog(true); }}
-          className="bg-gradient-to-r from-[hsl(var(--color-primary))] to-[hsl(var(--color-primary-hover))] hover:opacity-90 shadow-md hover:shadow-lg transition-all"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Task
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="My Tasks"
+        description={scope === "created" ? "Tasks you created" : "Tasks assigned to you"}
+        actions={
+          <Button
+            onClick={() => {
+              setEditingTask(null);
+              setShowCreateDialog(true);
+            }}
+            className="h-11"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Create task
+          </Button>
+        }
+      />
 
       {/* Filters and controls */}
       <Card className="border-[hsl(var(--card-border))] shadow-[var(--shadow-sm)]">
