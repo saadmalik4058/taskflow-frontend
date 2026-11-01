@@ -5,6 +5,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 import { AppShell } from "@/components/layout/app-shell";
 import { ToastProvider, ToastViewport } from "@/components/ui/toast";
+import { Providers } from "@/components/providers";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -27,9 +28,11 @@ export default function RootLayout({
     <html lang="en" className={plusJakartaSans.variable}>
       <body className={`${plusJakartaSans.className} bg-canvas text-ink antialiased`}>
         <ToastProvider>
-          <AuthProvider>
-            <AppShell>{children}</AppShell>
-          </AuthProvider>
+          <Providers>
+            <AuthProvider>
+              <AppShell>{children}</AppShell>
+            </AuthProvider>
+          </Providers>
           <ToastViewport />
         </ToastProvider>
       </body>

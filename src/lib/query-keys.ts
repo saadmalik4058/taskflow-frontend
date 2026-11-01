@@ -1,0 +1,5 @@
+export const PROJECT_LIST = ['projects']
+export const PROJECT = (id: string) => ['project', id]
+export const TASK_LIST = ['tasks']
+export const TASK = (id: string) => ['task', id]
+export const TASKS_BY_PROJECT = (projectId: string) => ['tasks', 'project', projectId]
