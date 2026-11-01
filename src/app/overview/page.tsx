@@ -1,39 +1,68 @@
 "use client";
 
-import { useTasks } from "@/hooks/use-tasks";
+import { useAllTasks } from "@/hooks/use-all-tasks";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Info, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { useMemo } from "react";
 
 export default function OverviewPage() {
-  const { data: tasksResponse = [], isLoading } = useTasks();
-  const tasks = Array.isArray(tasksResponse) ? tasksResponse : (tasksResponse?.tasks || []);
+  const { tasks, isLoading, error, note } = useAllTasks();
 
   if (isLoading) return <p>Loading…</p>;
 
-  // ---- stats computed from the task list -----------------
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Error loading tasks</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 inline-block text-brand-strong underline"
+          >
+            Retry
+          </button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // If we have a note about limited pages, show it at the top
+  const noteElement = note
+    ? <p className="mt-2 text-sm text-ink-muted">{note}</p>
+    : null;
+
+  // ---- stats computed from the full task list -----------------
   const total = tasks.length;
   const completed = tasks.filter((t) => t.status === "completed").length;
   const inProgress = tasks.filter((t) => t.status === "in-progress").length;
+  // Overdue: due date before today (UTC) and not completed
+  const todayDate = new Date();
+  todayDate.setUTCHours(0, 0, 0, 0);
   const overdue = tasks.filter(
     (t) =>
       t.dueDate &&
-      new Date(t.dueDate as string) < new Date() &&
+      new Date(t.dueDate as string).setUTCHours(0, 0, 0, 0) < todayDate.getTime() &&
       t.status !== "completed"
   ).length;
   const pending = total - completed - inProgress - overdue;
 
-  // ---- “Today” list (tasks due today or with no due date) ----------
-  const today = tasks
-    .filter(
-      (t) =>
-        (!t.dueDate || new Date(t.dueDate as string).toDateString() === new Date().toDateString()) &&
-        t.status !== "completed"
-    )
-    .slice(0, 5); // show at most 5
+  // ---- “Today” list: only tasks due today (date‑only, UTC) and not completed
+  const todayTasks = tasks.filter(
+    (t) =>
+      t.dueDate &&
+      new Date(t.dueDate as string).setUTCHours(0, 0, 0, 0) ===
+        todayDate.getTime() &&
+      t.status !== "completed"
+  );
+  // Show at most 5
+  const todayPreview = todayTasks.slice(0, 5);
 
   return (
     <>
+      {noteElement}
       <h1 className="mb-6 text-3xl font-bold">Welcome back!</h1>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -78,16 +107,19 @@ export default function OverviewPage() {
           <CardTitle>Today</CardTitle>
         </CardHeader>
         <CardContent>
-          {today.length ? (
+          {todayPreview.length ? (
             <ul className="space-y-1 text-sm">
-              {today.map((t) => {
-                const title = t.title;
+              {todayPreview.map((t) => {
                 const due = t.dueDate
-                  ? ` (due ${new Date(t.dueDate as string).toLocaleDateString()})`
+                  ? ` (due ${new Date(t.dueDate as string).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    })}`
                   : "";
                 return (
                   <li key={t._id}>
-                    {title}{due}
+                    {t.title}{due}
                   </li>
                 );
               })}

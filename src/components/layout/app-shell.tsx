@@ -118,7 +118,7 @@ function SidebarContent({ projects, projectsLoading, onNavigate }: SidebarConten
             projects.map((project) => (
               <Link
                 key={project._id}
-                href="/projects"
+                href={`/projects/${project._id}`}
                 onClick={onNavigate}
                 title={project.name}
                 className="flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-sm text-ink-muted transition-colors hover:bg-canvas hover:text-ink"
