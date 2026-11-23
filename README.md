@@ -4,8 +4,8 @@ A modern task management application built for freelancers, developers, students
 
 ## Repositories
 
-- **Frontend:** [Taskflow Frontend](https://github.com/yourusername/taskflow-frontend)
-- **Backend:** [Taskflow Backend](https://github.com/yourusername/taskflow-backend)
+- **Frontend:** [Taskflow Frontend](https://github.com/saadmalik4058/taskflow-frontend)
+- **Backend:** [Taskflow Backend](https://github.com/saadmalik4058/taskflow-backend)
 
 ## Tech Stack
 
